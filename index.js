@@ -5,6 +5,8 @@ require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 8002;
+require('./config/express')(app);
+require('./app/api/routes')(app);
 
 app.get('/', (req, res) => {
     res.send('Hello, Express!')

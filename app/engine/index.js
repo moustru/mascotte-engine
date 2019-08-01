@@ -18,7 +18,7 @@ const order = {
 const history = [];
 const transactions = [];
 
-const buy = (e) => {
+const buy = () => {
     if(cfg.wallet - cfg.bet > 0) {
         let transaction = {
             BTC: (cfg.bet / cfg.sell),
@@ -31,10 +31,10 @@ const buy = (e) => {
         transactions.push(transaction);
         history.push(transaction);
         cfg.btc = transactions.map(x => x.BTC).reduce((a, b) => a + b);
-        currentType = 'Buy'
+        cfg.currentType = 'Buy'
     } else {
-        e.preventDefault();
-    }    
+        return false;
+    }
 }
 
 const sell = (transaction) => {
@@ -42,14 +42,14 @@ const sell = (transaction) => {
 
     cfg.wallet += amount;
     cfg.btc -= transaction.BTC;
-    currentType = 'Sell';
+    cfg.currentType = 'Sell';
     history.push(transaction);
     transactions.splice(transaction, 1);
 
     if(transactions.length == 0) buy();
 }
 
-const main = async () => {
+const main = async() => {
     let res = await axios.get('https://api.exmo.com/v1/ticker');
 
     if(res.data.BTC_RUB) {
@@ -58,24 +58,29 @@ const main = async () => {
     
         cfg.buy = Number(order.buy.toFixed(2));
         cfg.sell = Number(order.sell.toFixed(2));
-    
-        let purposeBuy = transactions.find(x => x.sellPrice <= cfg.sell);
-        let purposeSell = transactions.find(x => x.sellPrice <= cfg.buy);
-    
-        if(purposeSell && transactions.length > 0) sell(purposeSell);
-        if(!purposeBuy && transactions.length > 0) buy();
+
+        if(transactions.length > 0) {
+            let purposeBuy = transactions[transactions.length - 1].sellPrice - order.sell >= 1 ? true : false;
+            let purposeSell = transactions[transactions.length - 1].sellPrice < Math.ceil(order.buy) ? true : false;
+        
+            if(purposeSell && transactions.length > 0) sell(transactions[transactions.length - 1]);
+            if(purposeBuy && transactions.length > 0) buy();
+        }
     
         return new Promise(resolve => { resolve() })
     } else {
-        console.log('Разрыв соединения. Пожалуйста, перезапустите сервер')
-        process.exit(0);
+        console.log('Разрыв соединения. Пытаемся восстановить')
+        process.disconnect();
+
+        if(res.data.BTC_RUB) {
+            process.connected;
+        }
     }
 }
 
 const init = () => {
     cfg.date = new Date().getTime();
     main().then(() => { buy() });
-    
     setInterval(main, 2000);
 }
 

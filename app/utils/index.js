@@ -3,7 +3,7 @@ require('dotenv').config();
 
 module.exports = {
     sign(message) {
-        return cryptojs.HmacSHA512(message, process.env.SECRET).toString(crypto.enc.hex);
+        return cryptojs.HmacSHA512(message, process.env.SECRET).toString(cryptojs.enc.hex);
     },
 
     serialize(obj) {

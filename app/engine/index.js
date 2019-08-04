@@ -1,4 +1,6 @@
 const axios = require('axios');
+const Utils = require('./../utils');
+require('dotenv').config();
 
 const cfg = {
     date: 0,
@@ -81,7 +83,20 @@ const main = async() => {
 const init = () => {
     cfg.date = new Date().getTime();
     main().then(() => { buy() });
+    //getUser();
     setInterval(main, 2000);
+}
+
+const getUser = () => {
+    let data = Utils.serialize({ nonce: cfg.date++ });
+
+    axios.defaults.headers.post["Content-Type"] = "application/x-www-form-urlencoded";
+    axios.defaults.headers.post["Key"] = process.env.KEY;
+    axios.defaults.headers.post["Sign"] = Utils.sign(data);
+
+    axios.post('https://api.exmo.com/v1/user_info', data).then(response => {
+        console.log(response.data);
+    })
 }
 
 const getInfo = (req, res) => {
